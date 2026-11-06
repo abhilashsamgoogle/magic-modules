@@ -1132,12 +1132,115 @@ func TestAccAlloydbInstance_updatePscAutoConnections(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAlloydbInstance_pscAutoConnections(context),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("google_alloydb_instance.default", "psc_instance_info.0.effective_psc_auto_dns_enabled"),
+					resource.TestCheckResourceAttrSet("google_alloydb_instance.default", "psc_instance_info.0.effective_psc_auto_connection_policy"),
+				),
+			},
+			{
+				ResourceName:      "google_alloydb_instance.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: testAccAlloydbInstance_pscAutoConnectionsExplicitStates(context),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_config.0.psc_auto_dns_state", "PSC_AUTO_DNS_STATE_DISABLED"),
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_config.0.psc_auto_connection_policy_state", "DISABLED"),
+				),
+			},
+			{
+				ResourceName:      "google_alloydb_instance.default",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: testAccAlloydbInstance_pscAutoConnectionsEnabledStates(context),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_config.0.psc_auto_dns_state", "PSC_AUTO_DNS_STATE_ENABLED"),
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_config.0.psc_auto_connection_policy_state", "ENABLED"),
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_info.0.effective_psc_auto_dns_enabled", "true"),
+					resource.TestCheckResourceAttr("google_alloydb_instance.default", "psc_instance_info.0.effective_psc_auto_connection_policy", "true"),
+				),
+			},
+			{
+				ResourceName:      "google_alloydb_instance.default",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: testAccAlloydbInstance_updatePscAutoConnections(context),
 			},
 		},
 	})
+}
+
+func testAccAlloydbInstance_pscAutoConnectionsExplicitStates(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_alloydb_instance" "default" {
+  cluster       = google_alloydb_cluster.default.name
+  instance_id   = "tf-test-alloydb-instance%{random_suffix}"
+  instance_type = "PRIMARY"
+  machine_config {
+    cpu_count = 2
+  }
+  psc_instance_config {
+    psc_auto_dns_state               = "PSC_AUTO_DNS_STATE_DISABLED"
+    psc_auto_connection_policy_state = "DISABLED"
+    psc_auto_connections {
+      consumer_project = "${data.google_project.project.project_id}"
+      consumer_network = "projects/${data.google_project.project.project_id}/global/networks/%{network_name}"
+    }
+  }
+}
+resource "google_alloydb_cluster" "default" {
+  cluster_id = "tf-test-alloydb-cluster%{random_suffix}"
+  location   = "us-east1"
+  psc_config {
+    psc_enabled = true
+  }
+  initial_user {
+    password = "tf-test-alloydb-cluster%{random_suffix}"
+  }
+
+  deletion_protection = false
+}
+data "google_project" "project" {}
+`, context)
+}
+
+func testAccAlloydbInstance_pscAutoConnectionsEnabledStates(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_alloydb_instance" "default" {
+  cluster       = google_alloydb_cluster.default.name
+  instance_id   = "tf-test-alloydb-instance%{random_suffix}"
+  instance_type = "PRIMARY"
+  machine_config {
+    cpu_count = 2
+  }
+  psc_instance_config {
+    psc_auto_dns_state               = "PSC_AUTO_DNS_STATE_ENABLED"
+    psc_auto_connection_policy_state = "ENABLED"
+    psc_auto_connections {
+      consumer_project = "${data.google_project.project.project_id}"
+      consumer_network = "projects/${data.google_project.project.project_id}/global/networks/%{network_name}"
+    }
+  }
+}
+resource "google_alloydb_cluster" "default" {
+  cluster_id = "tf-test-alloydb-cluster%{random_suffix}"
+  location   = "us-east1"
+  psc_config {
+    psc_enabled = true
+  }
+  initial_user {
+    password = "tf-test-alloydb-cluster%{random_suffix}"
+  }
+
+  deletion_protection = false
+}
+data "google_project" "project" {}
+`, context)
 }
 
 func testAccAlloydbInstance_pscAutoConnections(context map[string]interface{}) string {

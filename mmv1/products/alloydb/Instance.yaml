@@ -458,6 +458,88 @@ properties:
               description: |
                 The status of the service connection policy.
               output: true
+            - name: dnsAutomationInfos
+              type: Array
+              description: |
+                List of DNS automation info for the PSC auto connection.
+              output: true
+              item_type:
+                type: NestedObject
+                properties:
+                  - name: state
+                    type: String
+                    description: |
+                      The state of the DNS automation of the PSC auto connection.
+                      Possible values include `STATE_UNSPECIFIED`, `PENDING_CREATE`,
+                      `ACTIVE`, `PENDING_DELETE`, `CREATE_FAILED`, and `DELETE_FAILED`.
+                    output: true
+                  - name: fullyQualifiedDomainName
+                    type: String
+                    description: |
+                      The fully qualified domain name of the instance for DNS automation.
+                      Example: `<uid>.<uid>.<region>.alloydb.goog.`.
+                    output: true
+            - name: serviceConnectionPolicy
+              type: String
+              description: |
+                The PSC service connection policy name. The format is
+                `projects/<PROJECT_ID>/regions/<REGION_ID>/serviceConnectionPolicies/<alloydb-$NETWORK-$RANDOM-scp>`.
+              output: true
+            - name: serviceConnectionPolicyCreationState
+              type: String
+              description: |
+                The creation state or result of the connection policy.
+                Possible values include `ACTIVE` and `PERMISSION_DENIED`.
+              output: true
+      - name: pscAutoDnsState
+        type: Enum
+        description: |
+          Configuration for setting up PSC auto DNS for the instance.
+          For old instances, `PSC_AUTO_DNS_STATE_UNSPECIFIED` disables PSC auto DNS.
+          For new instances, `PSC_AUTO_DNS_STATE_UNSPECIFIED` enables PSC auto DNS by default.
+          Use `psc_instance_info.0.effective_psc_auto_dns_enabled` to check the effective state.
+        default_from_api: true
+        enum_values:
+          - PSC_AUTO_DNS_STATE_ENABLED
+          - PSC_AUTO_DNS_STATE_DISABLED
+      - name: pscAutoConnectionPolicyState
+        type: Enum
+        description: |
+          Configuration for setting up PSC auto connection policy creation (PSC One-Click) for the instance.
+          For old instances, `PSC_AUTO_CONNECTION_POLICY_STATE_UNSPECIFIED` disables PSC auto connection policy creation.
+          For new instances, `PSC_AUTO_CONNECTION_POLICY_STATE_UNSPECIFIED` enables PSC auto connection policy creation by default.
+        default_from_api: true
+        enum_values:
+          - ENABLED
+          - DISABLED
+  - name: pscInstanceInfo
+    type: NestedObject
+    description: |
+      Information about Private Service Connect (PSC) for the instance.
+    output: true
+    properties:
+      - name: effectivePscAutoDnsEnabled
+        type: Boolean
+        description: |
+          The effective state of PSC auto DNS for the instance.
+        output: true
+      - name: pscAutoDnsNames
+        type: Array
+        description: |
+          Specifies the auto DNS names for the instance.
+        output: true
+        item_type:
+          type: String
+      - name: effectivePscAutoConnectionPolicy
+        type: Boolean
+        description: |
+          Indicates if the PSC auto connection policy is enabled for the instance.
+        output: true
+      - name: serviceConnectionPolicy
+        type: String
+        description: |
+          The PSC service connection policy name.
+        output: true
   - name: networkConfig
     type: NestedObject
     default_from_api: true
